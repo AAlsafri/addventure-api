@@ -1,0 +1,24 @@
+# Virtual environment
+env/
+venv/
+.venv/
+ENV/
+env.bak/
+.python-version
+
+# Django files
+*.log
+*.pot
+*.pyc
+__pycache__/
+db.sqlite3
+/media/
+/staticfiles/
+*.sqlite3
+
+# Environment variables file
+.env
+
+# macOS
+.DS_Store
+
