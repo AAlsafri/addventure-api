@@ -16,7 +16,10 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
+from backend.views import DestinationList, DestinationDetail
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('destinations/', DestinationList.as_view(), name='destination_list'),
+    path('destinations/<int:pk>/', DestinationDetail.as_view(), name='destination_detail'),
 ]
