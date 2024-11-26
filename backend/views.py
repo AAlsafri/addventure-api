@@ -4,20 +4,63 @@ from rest_framework import status
 from django.shortcuts import get_object_or_404
 from .models import Destination
 from .serializers import DestinationSerializer
+from rest_framework.authtoken.models import Token
+from django.contrib.auth.models import User
+from django.contrib.auth import authenticate
+from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.authentication import TokenAuthentication
 
+class RegisterUser(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        username = request.data.get('username')
+        password = request.data.get('password')
+
+        if not username or not password:
+            return Response({'error': 'Username and password are required'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if User.objects.filter(username=username).exists():
+            return Response({'error': 'Username already exists'}, status=status.HTTP_400_BAD_REQUEST)
+
+        user = User.objects.create_user(username=username, password=password)
+        token, _ = Token.objects.get_or_create(user=user)
+        return Response({'token': token.key}, status=status.HTTP_201_CREATED)
+
+
+class LoginUser(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        username = request.data.get('username')
+        password = request.data.get('password')
+
+        if not username or not password:
+            return Response({'error': 'Username and password are required'}, status=status.HTTP_400_BAD_REQUEST)
+
+        user = authenticate(username=username, password=password)
+
+        if user:
+            token, _ = Token.objects.get_or_create(user=user)
+            return Response({'token': token.key}, status=status.HTTP_200_OK)
+        return Response({'error': 'Invalid credentials'}, status=status.HTTP_400_BAD_REQUEST)
 
 class DestinationList(APIView):
     """
-    Handles listing and creating destinations.
+    Handles listing and creating destinations for the authenticated user.
     """
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        destinations = Destination.objects.all()
+        destinations = Destination.objects.filter(user=request.user)  # Restrict to user's destinations
         serializer = DestinationSerializer(destinations, many=True)
         return Response(serializer.data)
 
     def post(self, request):
-        serializer = DestinationSerializer(data=request.data)
+        data = request.data
+        data['user'] = request.user.id  # Automatically assign current user
+        serializer = DestinationSerializer(data=data)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -26,16 +69,18 @@ class DestinationList(APIView):
 
 class DestinationDetail(APIView):
     """
-    Handles retrieving, updating, and deleting a specific destination.
+    Handles retrieving, updating, and deleting a specific destination for the authenticated user.
     """
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
 
     def get(self, request, pk):
-        destination = get_object_or_404(Destination, pk=pk)
+        destination = get_object_or_404(Destination, pk=pk, user=request.user)  # Ensure user owns the destination
         serializer = DestinationSerializer(destination)
         return Response(serializer.data)
 
     def put(self, request, pk):
-        destination = get_object_or_404(Destination, pk=pk)
+        destination = get_object_or_404(Destination, pk=pk, user=request.user)
         serializer = DestinationSerializer(destination, data=request.data)
         if serializer.is_valid():
             serializer.save()
@@ -43,6 +88,6 @@ class DestinationDetail(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def delete(self, request, pk):
-        destination = get_object_or_404(Destination, pk=pk)
+        destination = get_object_or_404(Destination, pk=pk, user=request.user)
         destination.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
