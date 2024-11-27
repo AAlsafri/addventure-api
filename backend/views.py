@@ -1,14 +1,16 @@
 from rest_framework.views import APIView
+from rest_framework.viewsets import ModelViewSet
 from rest_framework.response import Response
 from rest_framework import status
 from django.shortcuts import get_object_or_404
-from .models import Destination
-from .serializers import DestinationSerializer
+from .models import Destination, Continent
+from .serializers import DestinationSerializer, ContinentSerializer
 from rest_framework.authtoken.models import Token
 from django.contrib.auth.models import User
 from django.contrib.auth import authenticate
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.authentication import TokenAuthentication
+
 
 class RegisterUser(APIView):
     permission_classes = [AllowAny]
@@ -45,21 +47,19 @@ class LoginUser(APIView):
             return Response({'token': token.key}, status=status.HTTP_200_OK)
         return Response({'error': 'Invalid credentials'}, status=status.HTTP_400_BAD_REQUEST)
 
+
 class DestinationList(APIView):
-    """
-    Handles listing and creating destinations for the authenticated user.
-    """
     authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        destinations = Destination.objects.filter(user=request.user)  # Restrict to user's destinations
+        destinations = Destination.objects.filter(user=request.user)
         serializer = DestinationSerializer(destinations, many=True)
         return Response(serializer.data)
 
     def post(self, request):
         data = request.data
-        data['user'] = request.user.id  # Automatically assign current user
+        data['user'] = request.user.id
         serializer = DestinationSerializer(data=data)
         if serializer.is_valid():
             serializer.save()
@@ -68,14 +68,11 @@ class DestinationList(APIView):
 
 
 class DestinationDetail(APIView):
-    """
-    Handles retrieving, updating, and deleting a specific destination for the authenticated user.
-    """
     authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated]
 
     def get(self, request, pk):
-        destination = get_object_or_404(Destination, pk=pk, user=request.user)  # Ensure user owns the destination
+        destination = get_object_or_404(Destination, pk=pk, user=request.user)
         serializer = DestinationSerializer(destination)
         return Response(serializer.data)
 
@@ -91,3 +88,8 @@ class DestinationDetail(APIView):
         destination = get_object_or_404(Destination, pk=pk, user=request.user)
         destination.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class ContinentViewSet(ModelViewSet):
+    queryset = Continent.objects.all()
+    serializer_class = ContinentSerializer
