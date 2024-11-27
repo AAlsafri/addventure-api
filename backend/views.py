@@ -78,7 +78,12 @@ class DestinationDetail(APIView):
 
     def put(self, request, pk):
         destination = get_object_or_404(Destination, pk=pk, user=request.user)
-        serializer = DestinationSerializer(destination, data=request.data)
+
+        # Ensure the user field remains the same
+        data = request.data
+        data['user'] = request.user.id
+
+        serializer = DestinationSerializer(destination, data=data)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data)
@@ -93,3 +98,5 @@ class DestinationDetail(APIView):
 class ContinentViewSet(ModelViewSet):
     queryset = Continent.objects.all()
     serializer_class = ContinentSerializer
+    authentication_classes = [TokenAuthentication]
+    permission_classes = []
