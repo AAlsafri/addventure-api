@@ -19,6 +19,7 @@ from rest_framework.routers import DefaultRouter
 from .views import (
     RegisterUser,
     LoginUser,
+    LogoutUser,  
     DestinationList,
     DestinationDetail,
     ContinentViewSet,
@@ -30,7 +31,8 @@ router.register(r'continents', ContinentViewSet, basename='continent')
 urlpatterns = [
     path('register/', RegisterUser.as_view(), name='register'),
     path('login/', LoginUser.as_view(), name='login'),
+    path('logout/', LogoutUser.as_view(), name='logout'),  
     path('destinations/', DestinationList.as_view(), name='destination-list'),
     path('destinations/<int:pk>/', DestinationDetail.as_view(), name='destination-detail'),
-    path('', include(router.urls)),  
+    path('', include(router.urls)),
 ]

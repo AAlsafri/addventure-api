@@ -13,6 +13,10 @@ from rest_framework.authentication import TokenAuthentication
 
 
 class RegisterUser(APIView):
+    """
+    API endpoint to handle user registration.
+    Creates a new user and generates a token for authentication.
+    """
     permission_classes = [AllowAny]
 
     def post(self, request):
@@ -31,6 +35,10 @@ class RegisterUser(APIView):
 
 
 class LoginUser(APIView):
+    """
+    API endpoint to handle user login.
+    Authenticates user credentials and provides a token upon success.
+    """
     permission_classes = [AllowAny]
 
     def post(self, request):
@@ -48,7 +56,23 @@ class LoginUser(APIView):
         return Response({'error': 'Invalid credentials'}, status=status.HTTP_400_BAD_REQUEST)
 
 
+class LogoutUser(APIView):
+    """
+    API endpoint to handle user logout.
+    Deletes the user's token to log them out.
+    """
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        request.user.auth_token.delete()
+        return Response({'message': 'Logged out successfully'}, status=status.HTTP_200_OK)
+
+
 class DestinationList(APIView):
+    """
+    API endpoint to list or create destinations for the authenticated user.
+    """
     authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated]
 
@@ -68,6 +92,9 @@ class DestinationList(APIView):
 
 
 class DestinationDetail(APIView):
+    """
+    API endpoint to retrieve, update, or delete a specific destination for the authenticated user.
+    """
     authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated]
 
@@ -96,6 +123,10 @@ class DestinationDetail(APIView):
 
 
 class ContinentViewSet(ModelViewSet):
+    """
+    API endpoint to list, retrieve, create, update, or delete continents.
+    Requires authentication.
+    """
     queryset = Continent.objects.all()
     serializer_class = ContinentSerializer
     authentication_classes = [TokenAuthentication]
